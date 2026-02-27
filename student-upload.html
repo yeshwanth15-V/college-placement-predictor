@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Upload your resume to analyze your placement profile — MCET Placement Predictor">
+    <title>Upload Resume — MCET Placement Predictor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+
+<body>
+
+    <div class="student-page">
+
+        <!-- Navbar -->
+        <nav class="student-navbar">
+            <div class="nav-brand">
+                <div class="brand-dot">M</div>
+                <div>
+                    <h3>Placement Predictor</h3>
+                    <span>MCET</span>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <span id="studentRollDisplay" style="font-size:0.85rem; color:var(--gray-500);">Student</span>
+                <button class="btn btn-sm btn-outline" style="color:var(--gray-600); border-color:var(--gray-300);"
+                    onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active">
+                <div class="step-circle">1</div>
+                <div class="step-label">Upload Resume</div>
+                <div class="step-line"></div>
+            </div>
+            <div class="step">
+                <div class="step-circle">2</div>
+                <div class="step-label">View Profile</div>
+                <div class="step-line"></div>
+            </div>
+            <div class="step">
+                <div class="step-circle">3</div>
+                <div class="step-label">Select Company</div>
+                <div class="step-line"></div>
+            </div>
+            <div class="step">
+                <div class="step-circle">4</div>
+                <div class="step-label">Results</div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="text-center mb-xl">
+                <h1 style="font-size:1.75rem; color:var(--gray-900);">Upload Your Resume</h1>
+                <p style="color:var(--gray-500); max-width:500px; margin:8px auto 0;">
+                    Upload your resume in PDF format. We'll extract your profile details automatically.
+                </p>
+            </div>
+
+            <!-- Upload Zone -->
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📄</div>
+                <h3>Drag & drop your resume here</h3>
+                <p>or <span class="browse-link">browse files</span> from your computer</p>
+                <p style="margin-top: var(--space-md); font-size:0.8rem; color:var(--gray-400);">Supports PDF files (max
+                    10MB)</p>
+                <input type="file" id="fileInput" accept=".pdf,.doc,.docx" style="display:none;"
+                    onchange="handleFileSelect(event)">
+            </div>
+
+            <!-- File Preview -->
+            <div class="file-preview" id="filePreview">
+                <div class="file-icon">📎</div>
+                <div class="file-info">
+                    <h4 id="fileName">resume.pdf</h4>
+                    <p id="fileSize">2.4 MB</p>
+                </div>
+                <span class="remove-file" onclick="removeFile()" title="Remove file">✕</span>
+            </div>
+
+            <!-- Parsing Indicator -->
+            <div class="parsing-indicator" id="parsingIndicator">
+                <div class="parsing-spinner"></div>
+                <h3 style="color:var(--gray-900);">Analyzing your resume...</h3>
+                <p style="color:var(--gray-500);">Extracting profile details from your document</p>
+            </div>
+
+            <!-- Manual Entry Fallback -->
+            <div id="manualEntrySection" style="display:none;">
+                <div class="card mt-xl">
+                    <h3 style="color:var(--gray-900); margin-bottom:var(--space-lg);">📝 Manual Profile Entry</h3>
+                    <p style="color:var(--gray-500); margin-bottom:var(--space-lg); font-size:0.9rem;">
+                        We couldn't fully parse your document. Please enter your details manually.
+                    </p>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label form-label-dark">CGPA (out of 10)</label>
+                            <input type="number" class="form-input form-input-light" id="manualCGPA"
+                                placeholder="e.g., 8.2" step="0.1" min="0" max="10">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label form-label-dark">Number of Projects</label>
+                            <input type="number" class="form-input form-input-light" id="manualProjects"
+                                placeholder="e.g., 3" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label form-label-dark">Skills (comma separated)</label>
+                            <input type="text" class="form-input form-input-light" id="manualSkills"
+                                placeholder="e.g., Java, Python, SQL">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label form-label-dark">Internships Completed</label>
+                            <input type="number" class="form-input form-input-light" id="manualInternships"
+                                placeholder="e.g., 1" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label form-label-dark">Certifications</label>
+                            <input type="number" class="form-input form-input-light" id="manualCertifications"
+                                placeholder="e.g., 2" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label form-label-dark">Communication Level</label>
+                            <select class="form-select" id="manualCommunication">
+                                <option value="1">1 — Basic</option>
+                                <option value="2">2 — Fair</option>
+                                <option value="3" selected>3 — Good</option>
+                                <option value="4">4 — Very Good</option>
+                                <option value="5">5 — Excellent</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-lg mt-lg" onclick="saveManualProfile()">Save & Continue
+                        →</button>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="profile-actions" id="uploadActions" style="display:none;">
+                <button class="btn btn-primary btn-lg" onclick="proceedToProfile()">
+                    View Extracted Profile →
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
+    <script src="js/resume-parser.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!requireAuth('student')) return;
+            const studentUser = Session.get('studentUser');
+            if (studentUser) {
+                document.getElementById('studentRollDisplay').textContent = studentUser.roll;
+            }
+            setupDragDrop();
+        });
+
+        let selectedFile = null;
+
+        function setupDragDrop() {
+            const zone = document.getElementById('uploadZone');
+
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) processFile(files[0]);
+            });
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) processFile(file);
+        }
+
+        async function processFile(file) {
+            const validTypes = ['application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
+            if (!validTypes.includes(file.type) && !file.name.match(/\.(pdf|doc|docx)$/i)) {
+                showToast('Please upload a PDF or DOC file', 'error');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('File size must be under 10MB', 'error');
+                return;
+            }
+
+            selectedFile = file;
+
+            // Show file preview
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('filePreview').classList.add('visible');
+            document.getElementById('uploadZone').style.display = 'none';
+
+            // Check if PDF
+            if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                // Parse PDF
+                document.getElementById('parsingIndicator').classList.add('active');
+
+                try {
+                    const text = await extractTextFromPDF(file);
+                    const profile = parseResumeText(text);
+                    Session.set('studentProfile', profile);
+
+                    document.getElementById('parsingIndicator').classList.remove('active');
+
+                    if (profile.cgpa === 0 && profile.skills.length === 0 && profile.projects === 0) {
+                        showToast('Could not extract details. Please enter manually.', 'warning');
+                        document.getElementById('manualEntrySection').style.display = 'block';
+                    } else {
+                        showToast('Resume parsed successfully!', 'success');
+                        document.getElementById('uploadActions').style.display = 'block';
+                    }
+                } catch (err) {
+                    document.getElementById('parsingIndicator').classList.remove('active');
+                    showToast('Error parsing PDF. Please enter details manually.', 'warning');
+                    document.getElementById('manualEntrySection').style.display = 'block';
+                }
+            } else {
+                // DOC/DOCX — show manual entry
+                showToast('DOC format detected. Please enter your details manually.', 'info');
+                document.getElementById('manualEntrySection').style.display = 'block';
+            }
+        }
+
+        function removeFile() {
+            selectedFile = null;
+            document.getElementById('filePreview').classList.remove('visible');
+            document.getElementById('uploadZone').style.display = '';
+            document.getElementById('uploadActions').style.display = 'none';
+            document.getElementById('manualEntrySection').style.display = 'none';
+            document.getElementById('parsingIndicator').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+        }
+
+        function saveManualProfile() {
+            const profile = {
+                cgpa: parseFloat(document.getElementById('manualCGPA').value) || 0,
+                projects: parseInt(document.getElementById('manualProjects').value) || 0,
+                skills: document.getElementById('manualSkills').value.split(',').map(s => s.trim()).filter(Boolean),
+                internships: parseInt(document.getElementById('manualInternships').value) || 0,
+                certifications: parseInt(document.getElementById('manualCertifications').value) || 0,
+                communication: parseInt(document.getElementById('manualCommunication').value) || 3,
+                rawText: ''
+            };
+
+            if (profile.cgpa === 0) {
+                showToast('Please enter your CGPA', 'warning');
+                return;
+            }
+
+            Session.set('studentProfile', profile);
+            showToast('Profile saved!', 'success');
+
+            setTimeout(() => {
+                window.location.href = 'student-profile.html';
+            }, 600);
+        }
+
+        function proceedToProfile() {
+            window.location.href = 'student-profile.html';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+    </script>
+</body>
+
+</html>

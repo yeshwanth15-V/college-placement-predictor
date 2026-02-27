@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="View your eligibility score and placement readiness — MCET Placement Predictor">
+    <title>Eligibility Results — MCET Placement Predictor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+
+<body>
+
+    <div class="results-page">
+
+        <!-- Animated Background -->
+        <div class="animated-bg" style="position:absolute;">
+            <div class="bg-orb bg-orb-1"></div>
+            <div class="bg-orb bg-orb-2"></div>
+            <div class="bg-orb bg-orb-3"></div>
+        </div>
+
+        <div class="results-container" style="position:relative; z-index:2;">
+
+            <!-- Header -->
+            <div style="text-align:right; padding-top: var(--space-md);">
+                <button class="btn btn-outline btn-sm" onclick="handleLogout()">🚪 Logout</button>
+            </div>
+
+            <div class="results-hero">
+                <h1>Eligibility Analysis</h1>
+                <p>Your placement readiness score for the selected company</p>
+            </div>
+
+            <!-- Score Section -->
+            <div class="results-score-section">
+                <!-- Circular Progress -->
+                <div class="circular-progress" id="circularProgress">
+                    <svg viewBox="0 0 200 200">
+                        <circle class="track" cx="100" cy="100" r="90"></circle>
+                        <circle class="fill" id="progressFill" cx="100" cy="100" r="90"></circle>
+                    </svg>
+                    <div class="percentage">
+                        <span id="scoreValue">0</span><span>%</span>
+                    </div>
+                </div>
+
+                <!-- Score Details -->
+                <div class="score-details">
+                    <div class="company-name" id="companyNameDisplay">Company Name</div>
+                    <div id="statusBadge" class="status-badge eligible">
+                        ✓ Eligible
+                    </div>
+                    <div class="criteria-breakdown" id="criteriaBreakdown">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommended Companies -->
+            <div class="recommended-section" id="recommendedSection">
+                <h3>🏆 Recommended Companies For You</h3>
+                <div class="recommended-companies" id="recommendedCompanies">
+                    <!-- Filled dynamically -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="results-actions">
+                <button class="btn btn-gold btn-lg" onclick="showImprovement()">
+                    💡 I'm Interested — Show What to Improve
+                </button>
+                <button class="btn btn-outline btn-lg" onclick="tryAnotherCompany()">
+                    🔄 Try Another Company
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
+    <script src="js/companies.js"></script>
+    <script src="js/eligibility.js"></script>
+    <script>
+        let eligibilityResult = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!requireAuth('student')) return;
+
+            const profile = Session.get('studentProfile');
+            const companyId = Session.get('selectedCompanyId');
+
+            if (!profile || !companyId) {
+                showToast('Missing data. Please start from the beginning.', 'warning');
+                setTimeout(() => { window.location.href = 'student-upload.html'; }, 1500);
+                return;
+            }
+
+            const company = getCompanyById(companyId);
+            if (!company) {
+                showToast('Company not found.', 'error');
+                setTimeout(() => { window.location.href = 'company-select.html'; }, 1500);
+                return;
+            }
+
+            eligibilityResult = calculateEligibility(profile, company);
+            Session.set('eligibilityResult', eligibilityResult);
+
+            renderResults();
+        });
+
+        function renderResults() {
+            const { overallScore, isEligible, scores, company } = eligibilityResult;
+
+            // Company name
+            document.getElementById('companyNameDisplay').textContent = company.name + ' — ' + company.fullName;
+
+            // Status badge
+            const badge = document.getElementById('statusBadge');
+            if (isEligible) {
+                badge.className = 'status-badge eligible';
+                badge.innerHTML = '✓ Eligible';
+            } else {
+                badge.className = 'status-badge not-eligible';
+                badge.innerHTML = '✕ Not Eligible';
+            }
+
+            // Animated circular progress
+            animateProgress(overallScore, isEligible);
+
+            // Criteria breakdown
+            const breakdown = document.getElementById('criteriaBreakdown');
+            breakdown.innerHTML = '';
+
+            const criteriaItems = [
+                { label: 'CGPA', data: scores.cgpa, format: (d) => `${d.studentValue} / ${d.required}` },
+                { label: 'Skills Match', data: scores.skills, format: (d) => `${d.matched?.length || 0} / ${d.required?.length || 0}` },
+                { label: 'Projects', data: scores.projects, format: (d) => `${d.studentValue} / ${d.required}` },
+                { label: 'Internship', data: scores.internship, format: (d) => d.required ? (d.studentValue > 0 ? 'Yes' : 'No') : 'Not Required' },
+                { label: 'Communication', data: scores.communication, format: (d) => `${d.studentValue}/5 (need ${d.required}/5)` },
+                { label: 'Certifications', data: scores.certifications, format: (d) => `${d.studentValue} / ${d.required}` }
+            ];
+
+            criteriaItems.forEach(item => {
+                if (!item.data) return;
+                const div = document.createElement('div');
+                div.className = 'criteria-item';
+                div.innerHTML = `
+          <span class="icon">${item.data.met ? '✅' : '❌'}</span>
+          <span>${item.label}: ${item.format(item.data)}</span>
+          <span style="margin-left:auto; font-weight:600; color:${item.data.met ? 'var(--success)' : 'var(--danger)'};">
+            ${item.data.score}%
+          </span>
+        `;
+                breakdown.appendChild(div);
+            });
+
+            // Recommended companies
+            const profile = Session.get('studentProfile');
+            const recommended = getRecommendedCompanies(profile);
+            const recContainer = document.getElementById('recommendedCompanies');
+            recContainer.innerHTML = '';
+
+            if (recommended.length === 0) {
+                recContainer.innerHTML = '<p style="color:rgba(255,255,255,0.5);">Improve your profile to get company recommendations.</p>';
+            } else {
+                recommended.forEach(rec => {
+                    const chip = document.createElement('div');
+                    chip.className = 'recommended-chip';
+                    chip.onclick = () => {
+                        Session.set('selectedCompanyId', rec.company.id);
+                        window.location.reload();
+                    };
+                    chip.innerHTML = `
+            <span>${rec.company.logo}</span>
+            <span>${rec.company.name}</span>
+            <span style="color:var(--accent-gold); font-weight:700;">${rec.score}%</span>
+          `;
+                    recContainer.appendChild(chip);
+                });
+            }
+        }
+
+        function animateProgress(targetScore, isEligible) {
+            const fill = document.getElementById('progressFill');
+            const circumference = 2 * Math.PI * 90; // r=90
+
+            // Color based on score
+            if (targetScore >= 80) {
+                fill.style.stroke = 'var(--success)';
+            } else if (targetScore >= 65) {
+                fill.style.stroke = 'var(--accent-gold)';
+            } else if (targetScore >= 40) {
+                fill.style.stroke = 'var(--warning)';
+            } else {
+                fill.style.stroke = 'var(--danger)';
+            }
+
+            fill.style.strokeDasharray = circumference;
+            fill.style.strokeDashoffset = circumference;
+
+            // Animate
+            setTimeout(() => {
+                const offset = circumference - (circumference * targetScore / 100);
+                fill.style.strokeDashoffset = offset;
+            }, 300);
+
+            // Animate number
+            const scoreEl = document.getElementById('scoreValue');
+            let current = 0;
+            const step = targetScore / 40;
+            const interval = setInterval(() => {
+                current += step;
+                if (current >= targetScore) {
+                    current = targetScore;
+                    clearInterval(interval);
+                }
+                scoreEl.textContent = Math.round(current);
+            }, 30);
+        }
+
+        function showImprovement() {
+            window.location.href = 'comparison.html';
+        }
+
+        function tryAnotherCompany() {
+            window.location.href = 'company-select.html';
+        }
+    </script>
+</body>
+
+</html>

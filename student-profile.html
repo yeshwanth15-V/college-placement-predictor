@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="View your extracted profile and analyze placement readiness — MCET Placement Predictor">
+    <title>Your Profile — MCET Placement Predictor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+
+<body>
+
+    <div class="student-page">
+
+        <!-- Navbar -->
+        <nav class="student-navbar">
+            <div class="nav-brand">
+                <div class="brand-dot">M</div>
+                <div>
+                    <h3>Placement Predictor</h3>
+                    <span>MCET</span>
+                </div>
+            </div>
+            <div class="nav-actions">
+                <span id="studentRollDisplay" style="font-size:0.85rem; color:var(--gray-500);">Student</span>
+                <button class="btn btn-sm btn-outline" style="color:var(--gray-600); border-color:var(--gray-300);"
+                    onclick="handleLogout()">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step completed">
+                <div class="step-circle">✓</div>
+                <div class="step-label">Upload Resume</div>
+                <div class="step-line active"></div>
+            </div>
+            <div class="step active">
+                <div class="step-circle">2</div>
+                <div class="step-label">View Profile</div>
+                <div class="step-line"></div>
+            </div>
+            <div class="step">
+                <div class="step-circle">3</div>
+                <div class="step-label">Select Company</div>
+                <div class="step-line"></div>
+            </div>
+            <div class="step">
+                <div class="step-circle">4</div>
+                <div class="step-label">Results</div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="text-center mb-xl">
+                <h1 style="font-size:1.75rem; color:var(--gray-900);">Your Extracted Profile</h1>
+                <p style="color:var(--gray-500); max-width:500px; margin:8px auto 0;">
+                    Review your profile details below. You can edit any values if needed.
+                </p>
+            </div>
+
+            <!-- Profile Cards Grid -->
+            <div class="profile-grid" id="profileGrid">
+                <!-- Filled dynamically -->
+            </div>
+
+            <!-- Skills Section -->
+            <div class="card mt-lg" id="skillsCard">
+                <h3
+                    style="color:var(--gray-900); margin-bottom:var(--space-md); display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.2rem;">🛠️</span> Skills Detected
+                </h3>
+                <div class="skills-display" id="skillsDisplay">
+                    <!-- Filled dynamically -->
+                </div>
+                <div class="form-group mt-lg">
+                    <label class="form-label form-label-dark">Add more skills (comma separated)</label>
+                    <div class="flex gap-sm">
+                        <input type="text" class="form-input form-input-light" id="addSkillsInput"
+                            placeholder="e.g., Docker, AWS, React" style="flex:1;">
+                        <button class="btn btn-primary btn-sm" onclick="addSkills()">Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Profile Card -->
+            <div class="card mt-lg" id="editProfileCard">
+                <h3
+                    style="color:var(--gray-900); margin-bottom:var(--space-lg); display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.2rem;">✏️</span> Edit Profile
+                </h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">CGPA</label>
+                        <input type="number" class="form-input form-input-light" id="editCGPA" step="0.1" min="0"
+                            max="10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Projects</label>
+                        <input type="number" class="form-input form-input-light" id="editProjects" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Internships</label>
+                        <input type="number" class="form-input form-input-light" id="editInternships" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Certifications</label>
+                        <input type="number" class="form-input form-input-light" id="editCertifications" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Communication Level</label>
+                        <select class="form-select" id="editCommunication">
+                            <option value="1">1 — Basic</option>
+                            <option value="2">2 — Fair</option>
+                            <option value="3">3 — Good</option>
+                            <option value="4">4 — Very Good</option>
+                            <option value="5">5 — Excellent</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-md" onclick="updateProfile()">💾 Save Changes</button>
+            </div>
+
+            <!-- Analyze Button -->
+            <div class="profile-actions">
+                <button class="btn btn-gold btn-lg" onclick="analyzeProfile()"
+                    style="font-size:1.1rem; padding:18px 48px;">
+                    🔍 Analyze Profile & Select Company →
+                </button>
+                <p style="color:var(--gray-400); font-size:0.85rem; margin-top: var(--space-md);">
+                    Continue to check your eligibility with visiting companies
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
+    <script>
+        let currentProfile = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!requireAuth('student')) return;
+
+            const studentUser = Session.get('studentUser');
+            if (studentUser) {
+                document.getElementById('studentRollDisplay').textContent = studentUser.roll;
+            }
+
+            currentProfile = Session.get('studentProfile');
+            if (!currentProfile) {
+                showToast('No profile data found. Please upload your resume first.', 'warning');
+                setTimeout(() => { window.location.href = 'student-upload.html'; }, 1500);
+                return;
+            }
+
+            renderProfile();
+        });
+
+        const commLabels = ['', 'Basic', 'Fair', 'Good', 'Very Good', 'Excellent'];
+
+        function renderProfile() {
+            const grid = document.getElementById('profileGrid');
+            grid.innerHTML = `
+        <div class="profile-card">
+          <div class="card-header">
+            <div class="icon">📊</div>
+            <h4>CGPA</h4>
+          </div>
+          <div class="card-value">${currentProfile.cgpa || 'N/A'}<span style="font-size:0.9rem; color:var(--gray-400);"> /10</span></div>
+        </div>
+        <div class="profile-card">
+          <div class="card-header">
+            <div class="icon">💻</div>
+            <h4>Projects</h4>
+          </div>
+          <div class="card-value">${currentProfile.projects || 0}</div>
+        </div>
+        <div class="profile-card">
+          <div class="card-header">
+            <div class="icon">🏢</div>
+            <h4>Internships</h4>
+          </div>
+          <div class="card-value">${currentProfile.internships || 0}</div>
+        </div>
+        <div class="profile-card">
+          <div class="card-header">
+            <div class="icon">📜</div>
+            <h4>Certifications</h4>
+          </div>
+          <div class="card-value">${currentProfile.certifications || 0}</div>
+        </div>
+        <div class="profile-card">
+          <div class="card-header">
+            <div class="icon">🗣️</div>
+            <h4>Communication</h4>
+          </div>
+          <div class="card-value">${currentProfile.communication || 3}<span style="font-size:0.9rem; color:var(--gray-400);"> /5</span></div>
+          <div style="font-size:0.8rem; color:var(--gray-500); margin-top:4px;">${commLabels[currentProfile.communication] || 'Good'}</div>
+        </div>
+        <div class="profile-card">
+          <div class="card-header">
+            <div class="icon">🛠️</div>
+            <h4>Skills Count</h4>
+          </div>
+          <div class="card-value">${(currentProfile.skills || []).length}</div>
+        </div>
+      `;
+
+            // Skills
+            const skillsDisplay = document.getElementById('skillsDisplay');
+            skillsDisplay.innerHTML = '';
+            (currentProfile.skills || []).forEach(skill => {
+                skillsDisplay.innerHTML += `<span class="skill-tag">${skill}</span>`;
+            });
+
+            if ((currentProfile.skills || []).length === 0) {
+                skillsDisplay.innerHTML = '<span style="color:var(--gray-400); font-size:0.9rem;">No skills detected. Add skills manually below.</span>';
+            }
+
+            // Edit fields
+            document.getElementById('editCGPA').value = currentProfile.cgpa || '';
+            document.getElementById('editProjects').value = currentProfile.projects || 0;
+            document.getElementById('editInternships').value = currentProfile.internships || 0;
+            document.getElementById('editCertifications').value = currentProfile.certifications || 0;
+            document.getElementById('editCommunication').value = currentProfile.communication || 3;
+        }
+
+        function addSkills() {
+            const input = document.getElementById('addSkillsInput');
+            const newSkills = input.value.split(',').map(s => s.trim()).filter(Boolean);
+            if (newSkills.length === 0) {
+                showToast('Enter at least one skill', 'warning');
+                return;
+            }
+
+            const existingSkills = currentProfile.skills || [];
+            const combined = [...new Set([...existingSkills, ...newSkills])];
+            currentProfile.skills = combined;
+            Session.set('studentProfile', currentProfile);
+
+            input.value = '';
+            renderProfile();
+            showToast(`Added ${newSkills.length} skill(s)`, 'success');
+        }
+
+        function updateProfile() {
+            currentProfile.cgpa = parseFloat(document.getElementById('editCGPA').value) || 0;
+            currentProfile.projects = parseInt(document.getElementById('editProjects').value) || 0;
+            currentProfile.internships = parseInt(document.getElementById('editInternships').value) || 0;
+            currentProfile.certifications = parseInt(document.getElementById('editCertifications').value) || 0;
+            currentProfile.communication = parseInt(document.getElementById('editCommunication').value) || 3;
+
+            Session.set('studentProfile', currentProfile);
+            renderProfile();
+            showToast('Profile updated!', 'success');
+        }
+
+        function analyzeProfile() {
+            Session.set('studentProfile', currentProfile);
+            window.location.href = 'company-select.html';
+        }
+    </script>
+</body>
+
+</html>

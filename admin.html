@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="MCET Placement Cell Admin Dashboard — Manage visiting companies and eligibility criteria.">
+    <title>Admin Dashboard — MCET Placement Predictor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+
+<body>
+
+    <div class="admin-layout">
+
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">🎓</div>
+                <div>
+                    <h3>MCET</h3>
+                    <span>Placement Cell</span>
+                </div>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li><a href="#" class="active">📊 Dashboard</a></li>
+                <li><a href="#"
+                        onclick="document.getElementById('companyTableSection').scrollIntoView({behavior:'smooth'})">🏢
+                        Companies</a></li>
+                <li><a href="#" onclick="showAddCompanyForm()">➕ Add Company</a></li>
+                <li><a href="#" onclick="resetAllCompanies()">🔄 Reset Defaults</a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button class="btn btn-outline btn-block btn-sm" onclick="handleLogout()">🚪 Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+
+            <!-- Header -->
+            <div class="admin-header">
+                <div>
+                    <h1>Placement Dashboard</h1>
+                    <p>Manage visiting companies and their eligibility criteria</p>
+                </div>
+                <button class="btn btn-primary" onclick="showAddCompanyForm()">➕ Add Company</button>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statTotalCompanies">0</div>
+                    <div class="stat-label">Total Companies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statAvgCGPA">0</div>
+                    <div class="stat-label">Avg. Min CGPA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statInternshipReq">0</div>
+                    <div class="stat-label">Require Internship</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statTotalRoles">0</div>
+                    <div class="stat-label">Total Roles</div>
+                </div>
+            </div>
+
+            <!-- Add/Edit Company Form -->
+            <div class="company-form-card" id="companyFormCard" style="display:none;">
+                <h2 id="companyFormTitle">➕ Add New Company</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Company Name *</label>
+                        <input type="text" class="form-input form-input-light" id="companyName"
+                            placeholder="e.g., Google">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Full Name *</label>
+                        <input type="text" class="form-input form-input-light" id="companyFullName"
+                            placeholder="e.g., Google India Pvt Ltd">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Company Type</label>
+                        <input type="text" class="form-input form-input-light" id="companyType"
+                            placeholder="e.g., IT Services">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Brand Color</label>
+                        <input type="color" class="form-input form-input-light" id="companyColor" value="#3b42a0"
+                            style="height:46px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Package (LPA)</label>
+                        <input type="text" class="form-input form-input-light" id="companyPackage"
+                            placeholder="e.g., 6 - 12 LPA">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Roles (comma separated)</label>
+                        <input type="text" class="form-input form-input-light" id="companyRoles"
+                            placeholder="e.g., SDE, Analyst">
+                    </div>
+                </div>
+
+                <h2 style="margin-top: var(--space-xl); font-size: 1.1rem; color: var(--gray-900);">📋 Eligibility
+                    Criteria</h2>
+                <div class="form-grid" style="margin-top: var(--space-md);">
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Minimum CGPA</label>
+                        <input type="number" class="form-input form-input-light" id="companyMinCGPA"
+                            placeholder="e.g., 7.0" step="0.1" min="0" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Required Skills (comma separated)</label>
+                        <input type="text" class="form-input form-input-light" id="companySkills"
+                            placeholder="e.g., Java, Python, SQL">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Minimum Projects</label>
+                        <input type="number" class="form-input form-input-light" id="companyMinProjects"
+                            placeholder="e.g., 2" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Min Communication Level (1-5)</label>
+                        <select class="form-select" id="companyCommunication">
+                            <option value="1">1 — Basic</option>
+                            <option value="2">2 — Fair</option>
+                            <option value="3" selected>3 — Good</option>
+                            <option value="4">4 — Very Good</option>
+                            <option value="5">5 — Excellent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label form-label-dark">Min Certifications</label>
+                        <input type="number" class="form-input form-input-light" id="companyCertifications"
+                            placeholder="0" min="0" value="0">
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:center; gap:12px; padding-top:28px;">
+                        <input type="checkbox" id="companyInternship" style="width:20px;height:20px;cursor:pointer;">
+                        <label for="companyInternship" class="form-label form-label-dark" style="margin:0;">Internship
+                            Required</label>
+                    </div>
+                </div>
+
+                <div class="flex gap-md" style="margin-top: var(--space-xl);">
+                    <button class="btn btn-primary" onclick="saveCompanyForm()">💾 Save Company</button>
+                    <button class="btn btn-outline" style="color:var(--gray-600); border-color:var(--gray-300);"
+                        onclick="cancelCompanyForm()">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Company Table -->
+            <div id="companyTableSection">
+                <h2 style="font-size:1.2rem; color:var(--gray-900); margin-bottom:var(--space-lg);">🏢 Visiting
+                    Companies</h2>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Type</th>
+                                <th>Min CGPA</th>
+                                <th>Skills</th>
+                                <th>Projects</th>
+                                <th>Internship</th>
+                                <th>Communication</th>
+                                <th>Package</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="companyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
+    <script src="js/companies.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+
+</html>
